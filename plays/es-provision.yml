@@ -1,0 +1,96 @@
+---
+
+# ansible-playbook -i /home/rob/dev/git/ansible-server/inventory/es01.inv plays/provision.yml
+- hosts: master-node
+  roles:
+    - { role: elastic.elasticsearch, es_instance_name: "node1", es_heap_size: "1g", 
+    es_config: {
+        cluster.name: "test-cluster",
+        discovery.zen.ping.unicast.hosts: "192.168.77.21:9300, 192.168.77.22:9300",
+        discovery.zen.minimum_master_nodes: 2,
+        network.host: [ "_eth1:ipv4_"],
+        http.port: 9200,
+        transport.tcp.port: 9300,
+        node.data: false,
+        node.master: true,
+        node.ingest: false,
+        bootstrap.memory_lock: false,
+        }
+    }
+  vars:
+    es_scripts: false
+    es_templates: false
+    es_version_lock: false
+    es_plugins:
+     - plugin: ingest-geoip
+
+- hosts: ingest-node 
+  roles:
+    - { role: elastic.elasticsearch, es_instance_name: "node1", es_heap_size: "1g",
+    es_config: {
+        cluster.name: "test-cluster",
+        discovery.zen.ping.unicast.hosts: "192.168.77.21:9300, 192.168.77.22:9300",
+        discovery.zen.minimum_master_nodes: 2,
+        network.host: [ "_eth1:ipv4_"],
+        http.port: 9200,
+        transport.tcp.port: 9300,
+        node.data: false,
+        node.master: false,
+        node.ingest: true,
+        bootstrap.memory_lock: false,
+        }
+    }
+  vars:
+    es_scripts: false
+    es_templates: false
+    es_version_lock: false
+    es_plugins:
+     - plugin: ingest-geoip
+    
+- hosts: data-node
+  roles:
+    - { role: elastic.elasticsearch, es_instance_name: "node1", es_data_dirs: "/opt/elasticsearch", 
+    es_config: {
+        discovery.zen.ping.unicast.hosts: "192.168.77.21:9300, 192.168.77.22:9300",
+        discovery.zen.minimum_master_nodes: 2,
+        network.host: [ "_eth1:ipv4_"],
+        http.port: 9200,
+        transport.tcp.port: 9300,
+        node.data: true,
+        node.master: false,
+        node.ingest: false,
+        bootstrap.memory_lock: false,
+        cluster.name: "test-cluster"
+        } 
+    }
+  vars:
+    es_scripts: false
+    es_templates: false
+    es_version_lock: false
+    es_api_port: 9200
+    es_plugins:
+    - plugin: ingest-geoip
+
+  #- hosts: data-node
+  #  roles:
+  #    - { role: elastic.elasticsearch, es_instance_name: "node2", es_api_port: "9201",
+  #    es_config: {
+  #        discovery.zen.ping.unicast.hosts: "192.168.77.21:9300, 192.168.77.22:9300",
+  #        discovery.zen.minimum_master_nodes: 2,
+  #        network.host: [ "_eth1:ipv4_"],
+  #        http.port: 9201,
+  #        transport.tcp.port: 9301,
+  #        node.data: true,
+  #        node.master: false,
+  #        node.ingest: false,
+  #        bootstrap.memory_lock: false,
+  #        cluster.name: "test-cluster",
+  #        } 
+  #    }
+  #  vars:
+  #    es_scripts: false
+  #    es_templates: false
+  #    es_version_lock: false
+  #    es_api_port: 9201
+  #    es_plugins:
+  #    - plugin: ingest-geoip
