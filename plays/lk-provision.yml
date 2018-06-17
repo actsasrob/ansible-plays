@@ -3,3 +3,28 @@
   become: yes
   roles:
     - { role: geerlingguy.kibana, kibana_elasticsearch_url: "http://192.168.78.21:9200", kibana_server_port: 5601, kibana_server_host: "0.0.0.0", kibana_version: "6.2.4" }
+  tasks:
+    - file:
+        state: directory
+        path: /var/log/kibana
+        owner: kibana
+        group: kibana
+
+    - name: set elasticsearch username/password
+      lineinfile:
+        state: present
+        line: "{{ item.line }}"
+        regexp: "{{ item.regexp }}"
+        path: /etc/kibana/kibana.yml
+      with_items:
+        - { line: 'elasticsearch.username: "elastic"', regexp: "^elasticsearch.username: .*$" }
+        - { line: 'elasticsearch.password: "changeme"', regexp: "^elasticsearch.password: .*$" }
+        - { line: 'logging.dest: /var/log/kibana/kibana.log', regexp: "^logging.dest: /var/log/kibana/kibana.log$" }
+      notify: restart kibana
+
+
+  handlers:
+    - name: restart kibana
+      service:
+        name: kibana
+        state: restarted
